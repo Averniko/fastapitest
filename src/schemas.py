@@ -1,36 +1,26 @@
-from typing import Union
+import uuid
+from typing import List
 
 from pydantic import BaseModel
+
+from auth.schemas import UserRead
 
 
 class ItemBase(BaseModel):
     title: str
-    description: Union[str, None] = None
+    quantity: int
 
 
 class ItemCreate(ItemBase):
-    pass
+    quantity: int = 0
 
 
 class Item(ItemBase):
-    id: int
-    owner_id: int
+    id: uuid.UUID
 
     class Config:
         from_attributes = True
 
 
-class UserBase(BaseModel):
-    email: str
-
-
-class UserCreate(UserBase):
-    password: str
-    username: str
-
-
-class User(UserBase):
-    id: int
-
-    class Config:
-        from_attributes = True
+class ItemWithUsers(ItemBase):
+    users: List[UserRead]

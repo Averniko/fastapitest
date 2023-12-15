@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi_users.db import SQLAlchemyBaseUserTableUUID
+from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTableUUID
 from sqlalchemy import Integer, String, Column, ForeignKey, Table, UUID
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import relationship
@@ -21,7 +21,7 @@ item_user_association = Table(
 
 class User(SQLAlchemyBaseUserTableUUID, Base):
     username = Column(String, nullable=False)
-    items = relationship("Item", secondary=item_user_association, back_populates="users", lazy="joinedload")
+    items = relationship("Item", secondary=item_user_association, back_populates="users")
 
 
 class Item(Base):
@@ -31,4 +31,4 @@ class Item(Base):
     title = Column(String, nullable=False)
     quantity = Column(Integer, nullable=False, default=0)
 
-    users = relationship("User", secondary=item_user_association, back_populates="items", lazy="joinedload")
+    users = relationship("User", secondary=item_user_association, back_populates="items")

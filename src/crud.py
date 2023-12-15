@@ -1,33 +1,47 @@
+import uuid
+from typing import Optional, List
 from uuid import UUID
 
-from sqlalchemy import select
+from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
+from sqlalchemy import select, func, or_, Select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
 import models
 import schemas
+from models import User
 
 
-def get_user(db: Session, user_id: UUID):
-    return db.query(models.User).filter(models.User.id == user_id).first()
+class UserDatabase(SQLAlchemyUserDatabase):
+    async def get_by_email(self, email: str) -> Optional[User]:
+        statement = select(self.user_table).where(
+            or_(
+                func.lower(self.user_table.email) == func.lower(email),
+                func.lower(self.user_table.username) == func.lower(email),
+            )
+        )
+        return await self._get_user(statement)
+
+    async def get_user_by_id(self, user_id: UUID) -> Optional[User]:
+        statement = select(self.user_table).where(self.user_table.id == user_id)
+        return await self._get_user(statement)
+
+    async def get_users(self, skip: int = 0, limit: int = 100) -> List[User]:
+        statement = select(self.user_table).order_by(self.user_table.id.desc()).offset(skip).limit(limit)
+        return await self._get_users(statement)
+
+    async def create_user_item(self, item: schemas.ItemCreate, user_id: uuid.UUID):
+        db_item = models.Item(**item.model_dump())
+        db_user = await self.get_user_by_id(user_id=user_id)
+        db_item.users.append(db_user)
+        self.session.add(db_item)
+        await self.session.commit()
+        await self.session.refresh(db_item, ["users"])
+        return db_item
+
+    async def _get_users(self, statement: Select) -> List[User]:
+        results = await self.session.execute(statement)
+        return results.unique().scalars()
 
 
-def get_user_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email == email).first()
-
-
-async def get_users(session: AsyncSession, skip: int = 0, limit: int = 100):
-    result = await session.execute(select(models.User).order_by(models.User.id.desc()).offset(skip).limit(limit))
-    return result.scalars().all()
-
-
-def get_items(db: Session, skip: int = 0, limit: int = 100):
+async def get_items(db: AsyncSession, skip: int = 0, limit: int = 100):
     return db.query(models.Item).offset(skip).limit(limit).all()
-
-
-def create_user_item(db: Session, item: schemas.ItemCreate, user_id: int):
-    db_item = models.Item(**item.dict(), owner_id=user_id)
-    db.add(db_item)
-    db.commit()
-    db.refresh(db_item)
-    return db_item
