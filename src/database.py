@@ -3,11 +3,11 @@ from typing import AsyncGenerator
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from config import DATABASE_URL
+from config import DATABASE_URL, SHOW_DB_LOG
 from crud import UserDatabase
 from models import Base, User
 
-engine = create_async_engine(DATABASE_URL)
+engine = create_async_engine(DATABASE_URL, echo=SHOW_DB_LOG)
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 
