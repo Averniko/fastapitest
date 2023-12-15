@@ -10,10 +10,17 @@ python = "^3.9"
 fastapi = {extras = ["all"], version = "^0.104.1"}
 sqlalchemy = "^2.0.23"
 alembic = "^1.13.0"
-psycopg2 = "^2.9.9"
 fastapi-users = {extras = ["sqlalchemy"], version = "^12.1.2"}
 asyncpg = "^0.29.0"
+psycopg2 = "^2.9.9"
 
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^6.1.0"
+flake8-bugbear = "^23.12.2"
+flake8-builtins = "^2.2.0"
+flake8-commas = "^2.1.0"
+flake8-variables-names = "^0.0.6"
 
 [build-system]
 requires = ["poetry-core"]

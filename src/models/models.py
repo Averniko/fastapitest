@@ -20,7 +20,8 @@ item_user_association = Table(
 
 
 class User(SQLAlchemyBaseUserTableUUID, Base):
-    items = relationship("Item", secondary=item_user_association, back_populates="users")
+    username = Column(String, nullable=False)
+    items = relationship("Item", secondary=item_user_association, back_populates="users", lazy="joinedload")
 
 
 class Item(Base):
@@ -30,4 +31,4 @@ class Item(Base):
     title = Column(String, nullable=False)
     quantity = Column(Integer, nullable=False, default=0)
 
-    users = relationship("User", secondary=item_user_association, back_populates="items")
+    users = relationship("User", secondary=item_user_association, back_populates="items", lazy="joinedload")

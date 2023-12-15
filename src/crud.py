@@ -1,5 +1,7 @@
 from uuid import UUID
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 import models
@@ -14,8 +16,9 @@ def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
 
-def get_users(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.User).offset(skip).limit(limit).all()
+async def get_users(session: AsyncSession, skip: int = 0, limit: int = 100):
+    result = await session.execute(select(models.User).order_by(models.User.id.desc()).offset(skip).limit(limit))
+    return result.scalars().all()
 
 
 def get_items(db: Session, skip: int = 0, limit: int = 100):

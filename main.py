@@ -4,39 +4,55 @@ from fastapi import FastAPI, Request, status, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import ResponseValidationError, HTTPException
 from fastapi.responses import JSONResponse
-from fastapi_users import FastAPIUsers
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 import crud
 import schemas
 from auth import auth_backend
-from auth.manager import get_user_manager
-from auth.schemas import UserRead, UserCreate
-from database import get_async_session
+from auth.auth import current_active_user, fastapi_users
+from auth.schemas import UserRead, UserCreate, UserUpdate
+from database import get_async_session, create_db_and_tables
 from models import User
-
-# models.Base.metadata.create_all(bind=engine)
-
-fastapi_users = FastAPIUsers[User, uuid.UUID](
-    get_user_manager,
-    [auth_backend],
-)
 
 app = FastAPI(
     title="Test App"
 )
 
 app.include_router(
-    fastapi_users.get_auth_router(auth_backend),
-    prefix="/auth/jwt",
-    tags=["auth"],
+    fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"]
 )
+
+@app.on_event("startup")
+async def on_startup():
+    # Not needed if you setup a migration system like Alembic
+    await create_db_and_tables()
 
 app.include_router(
     fastapi_users.get_register_router(UserRead, UserCreate),
     prefix="/auth",
     tags=["auth"],
 )
+app.include_router(
+    fastapi_users.get_reset_password_router(),
+    prefix="/auth",
+    tags=["auth"],
+)
+app.include_router(
+    fastapi_users.get_verify_router(UserRead),
+    prefix="/auth",
+    tags=["auth"],
+)
+app.include_router(
+    fastapi_users.get_users_router(UserRead, UserUpdate),
+    prefix="/users",
+    tags=["users"],
+)
+
+
+@app.get("/authenticated-route")
+async def authenticated_route(user: User = Depends(current_active_user)):
+    return {"message": f"Hello {user.email}!"}
 
 
 @app.exception_handler(ResponseValidationError)
@@ -48,8 +64,8 @@ async def validation_exception_handler(request: Request, exc: ResponseValidation
 
 
 @app.get("/users/", response_model=list[schemas.User])
-async def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_async_session)):
-    users = crud.get_users(db, skip=skip, limit=limit)
+async def read_users(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_async_session)):
+    users = await crud.get_users(db, skip=skip, limit=limit)
     return users
 
 
