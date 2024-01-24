@@ -13,6 +13,7 @@ alembic = "^1.13.0"
 fastapi-users = {extras = ["sqlalchemy"], version = "^12.1.2"}
 asyncpg = "^0.29.0"
 psycopg2 = "^2.9.9"
+websockets = "^12.0"
 
 
 [tool.poetry.group.dev.dependencies]

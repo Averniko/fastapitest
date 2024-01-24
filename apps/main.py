@@ -11,6 +11,7 @@ from auth.auth import current_active_user, fastapi_users
 from auth.schemas import UserRead, UserCreate, UserUpdate
 from database import get_async_session, get_user_db
 from models import User
+from chat.router import router as chat_router
 
 app = FastAPI(
     title="Test App"
@@ -40,6 +41,10 @@ app.include_router(
     fastapi_users.get_users_router(UserRead, UserUpdate),
     prefix="/users",
     tags=["users"],
+)
+
+app.include_router(
+    chat_router
 )
 
 
